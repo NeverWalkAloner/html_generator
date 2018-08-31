@@ -2,7 +2,7 @@
 import argparse
 
 # project imports
-from core.managers import execute
+from core.generators import execute
 
 
 if __name__ == '__main__':

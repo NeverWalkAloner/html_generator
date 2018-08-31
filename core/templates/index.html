@@ -4,8 +4,24 @@
 
 {% block content %}
     {% for row in content %}
-        {% if current_category == row.category or not current_category %}
-            {% include 'base_detail.html' %}
-        {% endif %}
+        {% include 'base_detail.html' %}
     {% endfor %}
+{% endblock %}
+
+
+
+{% block pagination %}
+    {% if paginated %}
+        <nav aria-label="Page navigation">
+            <div class="text-center">
+                <ul class="pagination">
+                    {% for page in total_pages %}
+                        <li {% if loop.index == current_page %}class="active"{% endif %}>
+                            <a href="{{ current_category }}{{ loop.index }}.html">{{ loop.index }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </nav>
+    {% endif %}
 {% endblock %}

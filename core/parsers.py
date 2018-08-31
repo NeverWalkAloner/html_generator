@@ -1,3 +1,4 @@
+# python imports
 import os
 
 
@@ -44,10 +45,13 @@ class Parse:
                     line_key = splitted_line[0].strip().lower()
                     if line_key in self.content_attributes:
                         attributes[line_key] = splitted_line[1].strip()
-                    elif line_key.count(' ') == 0:
+                    elif line_key.count(' ') == 0 and len(splitted_line) > 1:
                         continue
                     else:
                         content.append(line)
             attributes['content'] = ''.join(content)
-            files.append(attributes)
+            if all(attributes.get(cat) for cat in self.content_attributes):
+                files.append(attributes)
+            else:
+                print(f'Cannot parse {file}')
         return files

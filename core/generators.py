@@ -1,6 +1,7 @@
 # python imports
 from distutils.dir_util import copy_tree
 import os
+import pathlib
 
 # tools imports
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -10,8 +11,6 @@ from slugify import slugify
 from . import config
 from . import filters
 from . import parsers
-
-import pathlib
 
 
 class Generator:
@@ -23,9 +22,28 @@ class Generator:
             loader=FileSystemLoader(config.TEMPLATE_PATH),
             autoescape=select_autoescape(['html', 'xml'])
         )
-        self.env.filters['sligify_category'] = filters.slugify_category
+        self.env.filters['urlify_category'] = filters.urlify_category
         self.env.filters['parse_markdown'] = filters.parse_markdown
         self.args = args
+
+    def _build_list_htm(self, categories: dict):
+        """
+        generate list html pages
+        :param categories: dict with categories names
+        :return: None
+        """
+        files_content = self._paginage_content(self.files_content)
+
+        # generate index page
+        self._render_pagination(files_content, categories, 'index')
+
+        # for each category generate main category pages
+        for category, url in categories.items():
+            files_content = [content for content in self.files_content if
+                             content['category'] == category]
+            files_content = self._paginage_content(files_content)
+
+            self._render_pagination(files_content, categories, category)
 
     def _copy_static(self):
         """
@@ -34,6 +52,17 @@ class Generator:
         """
         static_dir = os.path.join(config.OUTPUT_PATH, 'static')
         copy_tree(config.STATIC_PATH, static_dir)
+
+    def _paginage_content(self, contents: list):
+        """
+        paginate content
+        :param contents: list of content dicts
+        :return: list of list
+        """
+        paginatedby = self.args.paginatedby or len(contents)
+
+        return [contents[n:n+paginatedby] for n
+                in range(0, len(contents), paginatedby)]
 
     def _parse_files(self):
         """
@@ -48,7 +77,37 @@ class Generator:
             content['detail_url'] = f"{slugify(content['title'])}.html"
 
         # return content sorted by date in desc order
-        return list(reversed(sorted(files_content, key=lambda k: k['date'])))
+        self.files_content = list(
+            reversed(sorted(files_content, key=lambda k: k['date']))
+        )
+        return self.files_content
+
+    def _render_pagination(
+            self, files_content: list, categories: dict, category: str):
+        """
+        Paginate and render pages with list content
+        :param files_content: content dict
+        :param categories: categories names
+        :param category: current category name
+        :return:
+        """
+        page = 1
+        for file_content in files_content:
+            context = dict(
+                site_title=self.args.sitename,
+                categories=categories.items(),
+                content=file_content,
+                is_list=True,
+                current_page=page,
+                total_pages=range(len(files_content)),
+                paginated=self.args.paginatedby,
+                current_category=category
+            )
+
+            self._render_template(
+                'index.html', context, f'{category}{page}.html'
+            )
+            page += 1
 
     def _render_template(self, template: str, context: dict, out: str=None):
         """
@@ -70,21 +129,6 @@ class Generator:
         with open(out_filename, 'w+') as f:
             f.write(html)
 
-    def _paginage_content(self, contents: list):
-        """
-        paginate content
-        :param contents: list of content dicts
-        :return: list of list
-        """
-        paginatedby = self.args.paginatedby or len(contents)
-
-        return [contents[n:n + self.args.paginatedby] for n
-                in range(0, len(contents), paginatedby)]
-
-    def _build_main_htm(self, context):
-        # generate index.html page
-        self._render_template('index.html', context)
-
     def generate(self):
         """
         generate html files based on the content provided
@@ -92,28 +136,13 @@ class Generator:
         """
         files_content = self._parse_files()
 
-        if self.args.paginatedby:
-            files_content = self._paginage_content(files_content)
-
         categories = {
-            content['category']: f"{slugify(content['category'])}.html"
+            content['category']: f"{content['category']}1.html"
             for content in files_content
         }
 
-        context = dict(
-            site_title=self.args.sitename,
-            categories=categories.items(),
-            content=files_content,
-            is_list=True
-        )
-
         # generate index.html page
-        self._render_template('index.html', context)
-
-        # for each category generate main category pages
-        for category, url in categories.items():
-            context['current_category'] = category
-            self._render_template('index.html', context, url)
+        self._build_list_htm(categories)
 
         # generate detailed pages
         for details in files_content:
