@@ -1,0 +1,29 @@
+<div class="row">
+    <div class="panel panel-default">
+        <div class="panel-body starter-template">
+            <h2><a href="{{ row.detail_url }}">{{ row.title }}</a>
+            </h2>
+
+            {% if is_list %}
+                <div class="post_detail_item">
+                    {{ row.content|parse_markdown|safe|truncate(50) }}
+                </div>
+                <p><a href="{{ row.detail_url }}" class="btn btn-default">More</a></p>
+            {% else %}
+                <div class="post_detail_item">
+                    {{ row.content|parse_markdown|safe }}
+                </div>
+            {% endif %}
+
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-sm-6"><h4>Date: <b>{{ row.date }}</b>
+                </h4></div>
+                <div class="col-sm-6 text-right"><h4>Category: <a
+                        href="{{ row.category|sligify_category }}">{{
+                    row.category }}</a></h4></div>
+            </div>
+        </div>
+    </div>
+</div>

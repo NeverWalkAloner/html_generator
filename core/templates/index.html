@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}<title>{{ site_title }}</title>{% endblock %}
+
+{% block content %}
+    {% for row in content %}
+        {% if current_category == row.category or not current_category %}
+            {% include 'base_detail.html' %}
+        {% endif %}
+    {% endfor %}
+{% endblock %}
