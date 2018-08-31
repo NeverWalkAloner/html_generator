@@ -29,6 +29,10 @@ python manage.py --sitename "My static page"
 
 ### Features
 
+#### Categories
+
+You can create as many categories as you want.
+
 #### Pagination
 
 To enable pagination within whole project use *paginatedby* argument:
